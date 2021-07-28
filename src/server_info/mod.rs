@@ -1,159 +1,15 @@
+#[cfg(not(feature = "raw"))]
+mod raw;
+#[cfg(feature = "raw")]
+pub mod raw;
+
 use chrono::{Date, NaiveDate, Utc};
-use reqwest::StatusCode;
-use serde::{Deserialize, Serialize};
-use std::str::FromStr;
-use url::{ParseError, Url};
-
-#[derive(Deserialize, Serialize)]
-struct RawResponse {
-    #[serde(rename = "Success")]
-    success: bool,
-    #[serde(rename = "Error", skip_serializing_if = "Option::is_none", default)]
-    error: Option<String>,
-    #[serde(rename = "Servers", skip_serializing_if = "Option::is_none", default)]
-    servers: Option<Vec<RawServerInfo>>,
-    #[serde(rename = "Success", skip_serializing_if = "Option::is_none", default)]
-    cooldown: Option<u64>,
-}
-
-impl From<Response> for RawResponse {
-    fn from(response: Response) -> Self {
-        match response {
-            Response::Success(success) => RawResponse {
-                success: true,
-                error: None,
-                servers: Some(
-                    success
-                        .servers
-                        .into_iter()
-                        .map(RawServerInfo::from)
-                        .collect(),
-                ),
-                cooldown: Some(success.cooldown),
-            },
-            Response::Error(error) => RawResponse {
-                success: false,
-                error: Some(error.error),
-                servers: None,
-                cooldown: None,
-            },
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-struct RawServerInfo {
-    #[serde(rename = "ID")]
-    id: u64,
-    #[serde(rename = "Port")]
-    port: u16,
-    #[serde(
-        rename = "LastOnline",
-        skip_serializing_if = "Option::is_none",
-        default
-    )]
-    last_online: Option<String>,
-    #[serde(rename = "Players", skip_serializing_if = "Option::is_none", default)]
-    players_count: Option<String>,
-    #[serde(
-        rename = "PlayersList",
-        skip_serializing_if = "Option::is_none",
-        default
-    )]
-    players: Option<Vec<RawPlayer>>,
-    #[serde(rename = "Info", skip_serializing_if = "Option::is_none", default)]
-    info: Option<String>,
-    #[serde(rename = "FF", skip_serializing_if = "Option::is_none", default)]
-    friendly_fire: Option<bool>,
-    #[serde(rename = "WL", skip_serializing_if = "Option::is_none", default)]
-    whitelist: Option<bool>,
-    #[serde(rename = "Modded", skip_serializing_if = "Option::is_none", default)]
-    modded: Option<bool>,
-    #[serde(rename = "Mods", skip_serializing_if = "Option::is_none", default)]
-    mods: Option<u64>,
-    #[serde(rename = "Suppress", skip_serializing_if = "Option::is_none", default)]
-    suppress: Option<bool>,
-    #[serde(
-        rename = "AutoSuppress",
-        skip_serializing_if = "Option::is_none",
-        default
-    )]
-    auto_suppress: Option<bool>,
-}
-
-impl From<ServerInfo> for RawServerInfo {
-    fn from(server_info: ServerInfo) -> Self {
-        Self {
-            id: server_info.id,
-            port: server_info.port,
-            last_online: server_info
-                .last_online
-                .map(|date| date.format("%Y-%m-%d").to_string()),
-            players_count: server_info.players_count.map(|players_count| {
-                format!(
-                    "{}/{}",
-                    players_count.current_players, players_count.max_players
-                )
-            }),
-            players: server_info
-                .players
-                .map(|players| players.into_iter().map(RawPlayer::from).collect()),
-            info: server_info.info.map(base64::encode),
-            friendly_fire: server_info.friendly_fire,
-            whitelist: server_info.whitelist,
-            modded: server_info.modded,
-            mods: server_info.mods,
-            suppress: server_info.suppress,
-            auto_suppress: server_info.auto_suppress,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(untagged)]
-enum RawPlayer {
-    UserId(String),
-    UserIdWithNickname {
-        #[serde(rename = "ID")]
-        id: String,
-        #[serde(rename = "Nickname", default)]
-        nickname: Option<String>,
-    },
-}
-
-impl From<Player> for RawPlayer {
-    fn from(player: Player) -> Self {
-        if let Some(nickname) = player.nickname {
-            Self::UserIdWithNickname {
-                id: player.id,
-                nickname: Some(nickname),
-            }
-        } else {
-            Self::UserId(player.id)
-        }
-    }
-}
+use raw::*;
+use url::ParseError;
 
 pub enum Response {
     Success(SuccessResponse),
     Error(ErrorResponse),
-}
-
-impl FromStr for Response {
-    type Err = serde_json::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match serde_json::from_str::<RawResponse>(s) {
-            Ok(raw) => Ok(raw.into()),
-            Err(error) => Err(error),
-        }
-    }
-}
-
-impl From<Response> for String {
-    fn from(val: Response) -> Self {
-        serde_json::to_string(&RawResponse::from(val)).unwrap()
-    }
 }
 
 impl From<RawResponse> for Response {
@@ -575,59 +431,12 @@ impl<'a> RequestParametersBuilder<'a> {
 pub enum Error {
     UrlParseError(ParseError),
     ReqwestError(reqwest::Error),
-    UnexpectedStatusCode(StatusCode),
 }
 
+/// Returns info about own servers. See [official API reference](https://api.scpslgame.com/#/default/Get%20Server%20Info).
+/// # Errors
+/// Returns [`Error::ReqwestError`] if there was other `reqwest` error.  
+/// Returns [`Error::UrlParseError`] if `parameters.url` could not be parsed.  
 pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, Error> {
-    let mut query_parameters = Vec::new();
-    let id;
-
-    if let Some(id_) = parameters.id {
-        id = id_.to_string();
-        query_parameters.push(("id", id.as_str()));
-    }
-    if let Some(key) = parameters.key {
-        query_parameters.push(("key", key));
-    }
-    if parameters.last_online {
-        query_parameters.push(("lo", "true"));
-    }
-    if parameters.players {
-        query_parameters.push(("players", "true"));
-    }
-    if parameters.list {
-        query_parameters.push(("list", "true"));
-    }
-    if parameters.info {
-        query_parameters.push(("info", "true"));
-    }
-    if parameters.pastebin {
-        query_parameters.push(("pastebin", "true"));
-    }
-    if parameters.version {
-        query_parameters.push(("version", "true"));
-    }
-    if parameters.flags {
-        query_parameters.push(("flags", "true"));
-    }
-    if parameters.nicknames {
-        query_parameters.push(("nicknames", "true"));
-    }
-    if parameters.online {
-        query_parameters.push(("online", "true"));
-    }
-
-    match Url::parse_with_params(parameters.url, query_parameters) {
-        Ok(url) => match reqwest::get(url).await {
-            Ok(response) => match response.status() {
-                StatusCode::OK => match response.json::<RawResponse>().await {
-                Ok(raw_response) => Ok(raw_response.into()),
-                Err(error) => Err(Error::ReqwestError(error)),
-                },
-                status_code => Err(Error::UnexpectedStatusCode(status_code)),
-            },
-            Err(error) => Err(Error::ReqwestError(error)),
-        },
-        Err(error) => Err(Error::UrlParseError(error)),
-    }
+    raw::get(parameters).await.map(|response| response.into())
 }
