@@ -1,4 +1,6 @@
 use super::RequestParameters;
+#[cfg(feature = "raw")]
+use super::{Player, Response, ServerInfo};
 use reqwest::Error;
 use serde::Deserialize;
 #[cfg(feature = "raw")]
