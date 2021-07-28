@@ -65,10 +65,6 @@ pub struct ErrorResponse {
 }
 
 impl ErrorResponse {
-    pub fn new(error: String) -> Self {
-        Self { error }
-    }
-
     /// Get a reference to the error response's error.
     pub fn error(&self) -> &str {
         self.error.as_str()
