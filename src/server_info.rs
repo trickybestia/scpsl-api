@@ -1,4 +1,5 @@
 use chrono::{Date, NaiveDate, Utc};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use url::{ParseError, Url};
@@ -578,6 +579,7 @@ pub enum Error {
     RateLimitExceeded,
     UrlParseError(ParseError),
     ReqwestError(reqwest::Error),
+    UnexpectedStatusCode(StatusCode),
 }
 
 pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, Error> {
@@ -621,9 +623,16 @@ pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, 
 
     match Url::parse_with_params(parameters.url, query_parameters) {
         Ok(url) => match reqwest::get(url).await {
-            Ok(response) => match response.json::<RawResponse>().await {
+            Ok(response) => match response.status() {
+                StatusCode::OK => match response.json::<RawResponse>().await {
                 Ok(raw_response) => Ok(raw_response.into()),
                 Err(error) => Err(Error::ReqwestError(error)),
+                },
+                StatusCode::BAD_REQUEST => Err(Error::BadRequest),
+                StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
+                StatusCode::NOT_FOUND => Err(Error::IpNotVerified),
+                StatusCode::SERVICE_UNAVAILABLE => Err(Error::RateLimitExceeded),
+                status_code => Err(Error::UnexpectedStatusCode(status_code)),
             },
             Err(error) => Err(Error::ReqwestError(error)),
         },
