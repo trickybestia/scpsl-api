@@ -5,7 +5,8 @@ pub mod raw;
 
 use chrono::{Date, NaiveDate, Utc};
 use raw::*;
-use url::ParseError;
+use reqwest::Error;
+use url::Url;
 
 pub enum Response {
     Success(SuccessResponse),
@@ -309,7 +310,7 @@ impl From<RawPlayer> for Player {
 }
 
 pub struct RequestParameters<'a> {
-    url: &'a str,
+    url: &'a Url,
     id: Option<u64>,
     key: Option<&'a str>,
     last_online: bool,
@@ -331,7 +332,7 @@ impl<'a> RequestParameters<'a> {
 
 #[derive(Default)]
 pub struct RequestParametersBuilder<'a> {
-    url: Option<&'a str>,
+    url: Option<&'a Url>,
     id: Option<u64>,
     key: Option<&'a str>,
     last_online: bool,
@@ -367,7 +368,7 @@ impl<'a> RequestParametersBuilder<'a> {
         }
     }
 
-    pub fn url(mut self, value: &'a str) -> Self {
+    pub fn url(mut self, value: &'a Url) -> Self {
         self.url = Some(value);
         self
     }
@@ -428,15 +429,9 @@ impl<'a> RequestParametersBuilder<'a> {
     }
 }
 
-pub enum Error {
-    UrlParseError(ParseError),
-    ReqwestError(reqwest::Error),
-}
-
 /// Returns info about own servers. See [official API reference](https://api.scpslgame.com/#/default/Get%20Server%20Info).
 /// # Errors
-/// Returns [`Error::ReqwestError`] if there was other `reqwest` error.  
-/// Returns [`Error::UrlParseError`] if `parameters.url` could not be parsed.  
+/// Returns [`Error`] if there was an error in the [`reqwest`] crate.  
 pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, Error> {
     raw::get(parameters).await.map(|response| response.into())
 }

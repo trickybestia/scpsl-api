@@ -1,8 +1,8 @@
-use super::{Error, RequestParameters};
+use super::RequestParameters;
+use reqwest::Error;
 use serde::Deserialize;
 #[cfg(feature = "raw")]
 use serde::Serialize;
-use url::Url;
 
 #[cfg_attr(feature = "raw", derive(Serialize, Clone))]
 #[derive(Deserialize)]
@@ -142,56 +142,47 @@ impl From<Player> for RawPlayer {
 
 /// Returns raw info about own servers. See [official API reference](https://api.scpslgame.com/#/default/Get%20Server%20Info).
 /// # Errors
-/// Returns [`Error::ReqwestError`] if there was other `reqwest` error.  
-/// Returns [`Error::UrlParseError`] if `parameters.url` could not be parsed.  
+/// Returns [`Error`] if there was an error in the [`reqwest`] crate.  
 pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<RawResponse, Error> {
-    let mut query_parameters = Vec::new();
-    let id;
+    let mut url = parameters.url.to_owned();
 
-    if let Some(id_) = parameters.id {
-        id = id_.to_string();
-        query_parameters.push(("id", id.as_str()));
-    }
-    if let Some(key) = parameters.key {
-        query_parameters.push(("key", key));
-    }
-    if parameters.last_online {
-        query_parameters.push(("lo", "true"));
-    }
-    if parameters.players {
-        query_parameters.push(("players", "true"));
-    }
-    if parameters.list {
-        query_parameters.push(("list", "true"));
-    }
-    if parameters.info {
-        query_parameters.push(("info", "true"));
-    }
-    if parameters.pastebin {
-        query_parameters.push(("pastebin", "true"));
-    }
-    if parameters.version {
-        query_parameters.push(("version", "true"));
-    }
-    if parameters.flags {
-        query_parameters.push(("flags", "true"));
-    }
-    if parameters.nicknames {
-        query_parameters.push(("nicknames", "true"));
-    }
-    if parameters.online {
-        query_parameters.push(("online", "true"));
+    {
+        let mut query_parameters = url.query_pairs_mut();
+
+        if let Some(id) = parameters.id {
+            query_parameters.append_pair("id", id.to_string().as_str());
+        }
+        if let Some(key) = parameters.key {
+            query_parameters.append_pair("key", key);
+        }
+        if parameters.last_online {
+            query_parameters.append_pair("lo", "true");
+        }
+        if parameters.players {
+            query_parameters.append_pair("players", "true");
+        }
+        if parameters.list {
+            query_parameters.append_pair("list", "true");
+        }
+        if parameters.info {
+            query_parameters.append_pair("info", "true");
+        }
+        if parameters.pastebin {
+            query_parameters.append_pair("pastebin", "true");
+        }
+        if parameters.version {
+            query_parameters.append_pair("version", "true");
+        }
+        if parameters.flags {
+            query_parameters.append_pair("flags", "true");
+        }
+        if parameters.nicknames {
+            query_parameters.append_pair("nicknames", "true");
+        }
+        if parameters.online {
+            query_parameters.append_pair("online", "true");
+        }
     }
 
-    match Url::parse_with_params(parameters.url, query_parameters) {
-        Ok(url) => match reqwest::get(url).await {
-            Ok(response) => match response.json::<RawResponse>().await {
-                Ok(raw_response) => Ok(raw_response),
-                Err(error) => Err(Error::ReqwestError(error)),
-            },
-
-            Err(error) => Err(Error::ReqwestError(error)),
-        },
-        Err(error) => Err(Error::UrlParseError(error)),
-    }
+    Ok(reqwest::get(url).await?.json().await?)
 }
