@@ -573,10 +573,6 @@ impl<'a> RequestParametersBuilder<'a> {
 }
 
 pub enum Error {
-    BadRequest,
-    Unauthorized,
-    IpNotVerified,
-    RateLimitExceeded,
     UrlParseError(ParseError),
     ReqwestError(reqwest::Error),
     UnexpectedStatusCode(StatusCode),
@@ -628,10 +624,6 @@ pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, 
                 Ok(raw_response) => Ok(raw_response.into()),
                 Err(error) => Err(Error::ReqwestError(error)),
                 },
-                StatusCode::BAD_REQUEST => Err(Error::BadRequest),
-                StatusCode::UNAUTHORIZED => Err(Error::Unauthorized),
-                StatusCode::NOT_FOUND => Err(Error::IpNotVerified),
-                StatusCode::SERVICE_UNAVAILABLE => Err(Error::RateLimitExceeded),
                 status_code => Err(Error::UnexpectedStatusCode(status_code)),
             },
             Err(error) => Err(Error::ReqwestError(error)),
