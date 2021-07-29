@@ -1,10 +1,17 @@
 [package]
 name = "scpsl-api"
 description = "A SCP: Secret Laboratory API wrapper"
-version = "0.1.0-alpha.5"
+version = "0.1.0-alpha.6"
 edition = "2018"
 authors = ["trickybestia <trickybestia@gmail.com>"]
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/trickybestia/scpsl-api"
+documentation = "https://docs.rs/scpsl-api"
+keywords = ["scp", "scpsl", "api", "async"]
+categories = ["api-bindings", "asynchronous"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 reqwest = { version = "0.11.4", features = ["json"] }
