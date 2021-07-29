@@ -1,3 +1,6 @@
+//! This module contains structs and functions these can be used
+//! for working with the `serverinfo` API request.
+
 #[cfg(not(feature = "raw"))]
 mod raw;
 #[cfg(feature = "raw")]
@@ -8,8 +11,11 @@ use raw::*;
 use reqwest::Error;
 use url::Url;
 
+/// An enum representing a parsed API response for the `serverinfo` request.
 pub enum Response {
+    /// Successful response.
     Success(SuccessResponse),
+    /// Unsuccessful response.
     Error(ErrorResponse),
 }
 
@@ -31,6 +37,7 @@ impl From<RawResponse> for Response {
     }
 }
 
+/// A struct representing a successful API response for the `serverinfo` request.
 #[derive(Clone, Default)]
 pub struct SuccessResponse {
     cooldown: u64,
@@ -59,6 +66,7 @@ impl SuccessResponse {
     }
 }
 
+/// A struct representing an unsuccessful API response for the `serverinfo` request.
 #[derive(Clone, Default)]
 pub struct ErrorResponse {
     error: String,
@@ -76,6 +84,7 @@ impl ErrorResponse {
     }
 }
 
+/// A struct representing a server info for the `serverinfo` request.
 #[derive(Clone, Default)]
 pub struct ServerInfo {
     id: u64,
@@ -250,6 +259,7 @@ impl From<RawServerInfo> for ServerInfo {
     }
 }
 
+/// A struct representing the server's players count.
 #[derive(Clone, Default)]
 pub struct PlayersCount {
     max_players: u32,
@@ -278,6 +288,7 @@ impl PlayersCount {
     }
 }
 
+/// A struct representing a player on the server.
 #[derive(Clone, Default)]
 pub struct Player {
     id: String,
@@ -305,6 +316,7 @@ impl From<RawPlayer> for Player {
     }
 }
 
+/// A struct representing a parameters for the `serverinfo` request.
 pub struct RequestParameters<'a> {
     url: &'a Url,
     id: Option<u64>,
@@ -321,11 +333,13 @@ pub struct RequestParameters<'a> {
 }
 
 impl<'a> RequestParameters<'a> {
+    /// Returns a new instance of the [`RequestParametersBuilder`].
     pub fn builder() -> RequestParametersBuilder<'a> {
         RequestParametersBuilder::new()
     }
 }
 
+/// A struct representing a builder for the [`RequestParameters`].
 #[derive(Default)]
 pub struct RequestParametersBuilder<'a> {
     url: Option<&'a Url>,
@@ -343,10 +357,14 @@ pub struct RequestParametersBuilder<'a> {
 }
 
 impl<'a> RequestParametersBuilder<'a> {
+    /// Returns a new instance of the [`RequestParametersBuilder`].
     pub fn new() -> Self {
         Default::default()
     }
 
+    /// Consumes the [`RequestParametersBuilder`] instance and returns an instance of the [`RequestParameters`].
+    /// # Panics
+    /// Panics if `self.url` is [`None`].
     pub fn build(self) -> RequestParameters<'a> {
         RequestParameters {
             url: self.url.unwrap(),
@@ -364,61 +382,73 @@ impl<'a> RequestParametersBuilder<'a> {
         }
     }
 
+    /// Sets the url to be used.
     pub fn url(mut self, value: &'a Url) -> Self {
         self.url = Some(value);
         self
     }
 
+    /// Sets the `id` query parameter to be used.
     pub fn id(mut self, value: u64) -> Self {
         self.id = Some(value);
         self
     }
 
+    /// Sets the `key` query parameter to be used.
     pub fn key(mut self, value: &'a str) -> Self {
         self.key = Some(value);
         self
     }
 
+    /// Sets the `lo` query parameter to be used.
     pub fn last_online(mut self, value: bool) -> Self {
         self.last_online = value;
         self
     }
 
+    /// Sets the `players` query parameter to be used.
     pub fn players(mut self, value: bool) -> Self {
         self.players = value;
         self
     }
 
+    /// Sets the `list` query parameter to be used.
     pub fn list(mut self, value: bool) -> Self {
         self.list = value;
         self
     }
 
+    /// Sets the `info` query parameter to be used.
     pub fn info(mut self, value: bool) -> Self {
         self.info = value;
         self
     }
 
+    /// Sets the `pastebin` query parameter to be used.
     pub fn pastebin(mut self, value: bool) -> Self {
         self.pastebin = value;
         self
     }
 
+    /// Sets the `version` query parameter to be used.
     pub fn version(mut self, value: bool) -> Self {
         self.version = value;
         self
     }
 
+    /// Sets the `flags` query parameter to be used.
     pub fn flags(mut self, value: bool) -> Self {
         self.flags = value;
         self
     }
 
+    /// Sets the `nicknames` query parameter to be used.
     pub fn nicknames(mut self, value: bool) -> Self {
         self.nicknames = value;
         self
     }
 
+    /// Sets the `online` query parameter to be used.
     pub fn online(mut self, value: bool) -> Self {
         self.online = value;
         self
