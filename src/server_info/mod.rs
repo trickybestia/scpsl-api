@@ -1,5 +1,38 @@
 //! This module contains structs and functions these can be used
 //! for working with the `serverinfo` API request.
+//! # Examples
+//! ```
+//! use scpsl_api::server_info::{get, RequestParameters, Response};
+//! use std::env::var;
+//! use url::Url;
+//!
+//! #[tokio::main]
+//! async fn main() {
+//!     let account_id = var("ACCOUNT_ID")
+//!         .expect("Expected an account id in the environment")
+//!         .parse::<u64>()
+//!         .unwrap();
+//!     let api_key = var("API_KEY").expect("Expected an account id in the environment");
+//!
+//!     let parameters = RequestParameters::builder()
+//!         .url(Url::parse("https://api.scpslgame.com/serverinfo.php").unwrap())
+//!         .id(account_id)
+//!         .key(api_key)
+//!         .players(true)
+//!         .build();
+//!
+//!     if let Response::Success(response) = get(&parameters).await.unwrap() {
+//!         println!(
+//!             "Total players on your servers: {}",
+//!             response
+//!                 .servers()
+//!                 .iter()
+//!                 .map(|server| server.players_count().unwrap().current_players())
+//!                 .sum::<u32>()
+//!         )
+//!     }
+//! }
+//! ```
 
 #[cfg(not(feature = "raw"))]
 mod raw;
