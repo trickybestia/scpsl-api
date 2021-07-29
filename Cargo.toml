@@ -1,6 +1,7 @@
 [package]
 name = "scpsl-api"
-version = "0.1.0-alpha.4"
+description = "A SCP: Secret Laboratory API wrapper"
+version = "0.1.0-alpha.5"
 edition = "2018"
 authors = ["trickybestia <trickybestia@gmail.com>"]
 license = "MIT OR Apache-2.0"
