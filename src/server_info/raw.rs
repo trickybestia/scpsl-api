@@ -173,7 +173,7 @@ impl From<Player> for RawPlayer {
 /// Returns raw info about own servers. See [official API reference](https://api.scpslgame.com/#/default/Get%20Server%20Info).
 /// # Errors
 /// Returns [`Error`] if there was an error in the [`reqwest`] crate.  
-pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<RawResponse, Error> {
+pub async fn get<'a>(parameters: &'a RequestParameters) -> Result<RawResponse, Error> {
     let mut url = parameters.url.to_owned();
 
     {
@@ -182,8 +182,8 @@ pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<RawRespons
         if let Some(id) = parameters.id {
             query_parameters.append_pair("id", id.to_string().as_str());
         }
-        if let Some(key) = parameters.key {
-            query_parameters.append_pair("key", key);
+        if let Some(key) = &parameters.key {
+            query_parameters.append_pair("key", key.as_str());
         }
         if parameters.last_online {
             query_parameters.append_pair("lo", "true");

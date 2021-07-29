@@ -317,10 +317,10 @@ impl From<RawPlayer> for Player {
 }
 
 /// A struct representing a parameters for the `serverinfo` request.
-pub struct RequestParameters<'a> {
-    url: &'a Url,
+pub struct RequestParameters {
+    url: Url,
     id: Option<u64>,
-    key: Option<&'a str>,
+    key: Option<String>,
     last_online: bool,
     players: bool,
     list: bool,
@@ -332,19 +332,19 @@ pub struct RequestParameters<'a> {
     online: bool,
 }
 
-impl<'a> RequestParameters<'a> {
+impl RequestParameters {
     /// Returns a new instance of the [`RequestParametersBuilder`].
-    pub fn builder() -> RequestParametersBuilder<'a> {
+    pub fn builder() -> RequestParametersBuilder {
         RequestParametersBuilder::new()
     }
 }
 
 /// A struct representing a builder for the [`RequestParameters`].
 #[derive(Default)]
-pub struct RequestParametersBuilder<'a> {
-    url: Option<&'a Url>,
+pub struct RequestParametersBuilder {
+    url: Option<Url>,
     id: Option<u64>,
-    key: Option<&'a str>,
+    key: Option<String>,
     last_online: bool,
     players: bool,
     list: bool,
@@ -356,7 +356,7 @@ pub struct RequestParametersBuilder<'a> {
     online: bool,
 }
 
-impl<'a> RequestParametersBuilder<'a> {
+impl RequestParametersBuilder {
     /// Returns a new instance of the [`RequestParametersBuilder`].
     pub fn new() -> Self {
         Default::default()
@@ -365,7 +365,7 @@ impl<'a> RequestParametersBuilder<'a> {
     /// Consumes the [`RequestParametersBuilder`] instance and returns an instance of the [`RequestParameters`].
     /// # Panics
     /// Panics if `self.url` is [`None`].
-    pub fn build(self) -> RequestParameters<'a> {
+    pub fn build(self) -> RequestParameters {
         RequestParameters {
             url: self.url.unwrap(),
             id: self.id,
@@ -383,7 +383,7 @@ impl<'a> RequestParametersBuilder<'a> {
     }
 
     /// Sets the url to be used.
-    pub fn url(mut self, value: &'a Url) -> Self {
+    pub fn url(mut self, value: Url) -> Self {
         self.url = Some(value);
         self
     }
@@ -395,7 +395,7 @@ impl<'a> RequestParametersBuilder<'a> {
     }
 
     /// Sets the `key` query parameter to be used.
-    pub fn key(mut self, value: &'a str) -> Self {
+    pub fn key(mut self, value: String) -> Self {
         self.key = Some(value);
         self
     }
@@ -458,6 +458,6 @@ impl<'a> RequestParametersBuilder<'a> {
 /// Returns info about own servers. See [official API reference](https://api.scpslgame.com/#/default/Get%20Server%20Info).
 /// # Errors
 /// Returns [`Error`] if there was an error in the [`reqwest`] crate.  
-pub async fn get<'a>(parameters: &'a RequestParameters<'a>) -> Result<Response, Error> {
+pub async fn get<'a>(parameters: &RequestParameters) -> Result<Response, Error> {
     raw::get(parameters).await.map(|response| response.into())
 }
