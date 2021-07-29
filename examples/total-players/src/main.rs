@@ -10,12 +10,10 @@ async fn main() {
         .unwrap();
     let api_key = var("API_KEY").expect("Expected an account id in the environment");
 
-    let url = Url::parse("https://api.scpslgame.com/serverinfo.php").unwrap();
-
     let parameters = RequestParameters::builder()
-        .url(&url)
+        .url(Url::parse("https://api.scpslgame.com/serverinfo.php").unwrap())
         .id(account_id)
-        .key(api_key.as_str())
+        .key(api_key)
         .players(true)
         .build();
 
