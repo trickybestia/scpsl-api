@@ -1,0 +1,10 @@
+[package]
+name = "total-players"
+authors = ["trickybestia <trickybestia@gmail.com>"]
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+scpsl-api = { path = "../../" }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+url = "2.2.2"
